@@ -1,0 +1,365 @@
+{
+  "name": "News_letter_AI",
+  "nodes": [
+    {
+      "parameters": {
+        "trigger": [
+          "app_mention"
+        ],
+        "channelId": {
+          "__rl": true,
+          "value": "C0AG941QCA1",
+          "mode": "list",
+          "cachedResultName": "n8n-news"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.slackTrigger",
+      "typeVersion": 1,
+      "position": [
+        336,
+        -16
+      ],
+      "id": "75ac5110-416e-45d3-a4b5-9093b051f898",
+      "name": "Slack Trigger",
+      "webhookId": "cb8e16b3-58ec-4454-af3c-9ad4ca2eb31f",
+      "credentials": {
+        "slackApi": {
+          "id": "ybYS9PQzffuNLdpg",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.text }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "message": "=You are a strict intent classifier.  Extract the exact news topic from the user message.  Examples: \"AI news\" → topic: \"AI\" \"US tariff news\" → topic: \"US tariff\" \"Latest sports updates\" → topic: \"sports\"  Return ONLY this JSON: {   \"is_news\": true/false,   \"topic\": \"exact topic from user or null\" }  Do not generalize the topic. Do not rewrite it. Do not answer the user. Only return JSON."
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        528,
+        -16
+      ],
+      "id": "925bdc9d-e630-47ae-b596-a2998d1d1b30",
+      "name": "Basic LLM Chain"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        528,
+        192
+      ],
+      "id": "58043531-2787-4830-b6d6-d70b30d842f3",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "Rfd8tX4crTpLpvKQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dfbb73f8-59e9-4beb-93db-20ec410d76ef",
+              "leftValue": "={{ $json.text }}",
+              "rightValue": "",
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        848,
+        -16
+      ],
+      "id": "5141a8b1-45ef-437f-98b0-cd2112fbe6e0",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "url": "https://google.serper.dev/news",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {
+              "name": "q",
+              "value": "={{ JSON.parse($json.text).topic }}"
+            },
+            {
+              "name": "sortBy",
+              "value": "publishedAt"
+            },
+            {
+              "name": "language",
+              "value": "en"
+            },
+            {
+              "name": "pageSize",
+              "value": "5"
+            },
+            {
+              "name": "apiKey",
+              "value": "a18014e0ad5e513364060c9b5a99df2813510f61"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1104,
+        -32
+      ],
+      "id": "1eacb36a-9a6a-4887-9c7d-d7bec4cabc09",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "gpt-4o-mini",
+          "mode": "list",
+          "cachedResultName": "gpt-4o-mini"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        1312,
+        192
+      ],
+      "id": "39d8d8b5-8f41-4fb4-b431-491cf8677396",
+      "name": "OpenAI Chat Model1",
+      "credentials": {
+        "openAiApi": {
+          "id": "Rfd8tX4crTpLpvKQ",
+          "name": "OpenAi account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.news[16] }}",
+        "hasOutputParser": true,
+        "messages": {
+          "messageValues": [
+            {
+              "type": "=SystemMessagePromptTemplate",
+              "message": "=You are a professional newsletter writer.  Create a clean, structured newsletter.  Format: - Title - Short introduction paragraph - 5 bullet points (headline + 1-2 line summary) - Friendly closing sentence  Keep it concise and professional. Do not add anything outside the newsletter.\n\n#Dont send any links to the user unless they ask"
+            }
+          ]
+        },
+        "batching": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chainLlm",
+      "typeVersion": 1.9,
+      "position": [
+        1312,
+        -32
+      ],
+      "id": "f18b3773-f886-4790-9cfc-c8b60f4f4c08",
+      "name": "Basic LLM Chain1"
+    },
+    {
+      "parameters": {
+        "select": "channel",
+        "channelId": {
+          "__rl": true,
+          "value": "C0AG941QCA1",
+          "mode": "list",
+          "cachedResultName": "n8n-news"
+        },
+        "text": "={{ $json.text }}",
+        "otherOptions": {}
+      },
+      "type": "n8n-nodes-base.slack",
+      "typeVersion": 2.4,
+      "position": [
+        1680,
+        -32
+      ],
+      "id": "78a193ef-4653-4457-984c-a8e8302a36f5",
+      "name": "Send a message",
+      "webhookId": "5e845b6a-d6f8-46bc-8102-66785bd6d4b4",
+      "credentials": {
+        "slackApi": {
+          "id": "ybYS9PQzffuNLdpg",
+          "name": "Slack account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "sendTo": "vikashwork7@gmail.com",
+        "subject": "={{ $('HTTP Request').item.json.news[0].title }}",
+        "emailType": "text",
+        "message": "={{ $('Basic LLM Chain1').item.json.text }}",
+        "options": {
+          "appendAttribution": false
+        }
+      },
+      "type": "n8n-nodes-base.gmail",
+      "typeVersion": 2.2,
+      "position": [
+        1936,
+        -32
+      ],
+      "id": "5f55f88c-4597-4b58-92be-c03934612be4",
+      "name": "Send a message1",
+      "webhookId": "8665c5c0-b47f-4b84-b84d-4a729fc1d452",
+      "credentials": {
+        "gmailOAuth2": {
+          "id": "oxya59SQgIAarzAu",
+          "name": "Gmail account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Slack Trigger": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI Chat Model1": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "Basic LLM Chain1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Basic LLM Chain1": {
+      "main": [
+        [
+          {
+            "node": "Send a message",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Send a message": {
+      "main": [
+        [
+          {
+            "node": "Send a message1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "ff9d2516-4e49-4715-9c11-fb511ea94c52",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "a2c9f298b4688490532bc5633f716bea0c4b2d29658ee4e9f53436353c79f4fd"
+  },
+  "id": "glZpzTMp8TTahHOk",
+  "tags": []
+}
